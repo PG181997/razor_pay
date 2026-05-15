@@ -5,7 +5,6 @@ from models.user import User
 from passlib.context import CryptContext
 import logging
 from sqlalchemy.exc import IntegrityError
-
 from database import get_db
 
 router = APIRouter(prefix="/users", tags=["users"])
