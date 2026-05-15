@@ -5,13 +5,14 @@ from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, APIRouter, HTTPException
 from passlib.context import CryptContext
-from jose import jwt
+from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 load_dotenv()
-
+oauth2_bearer = HTTPBearer()
 KEY = os.getenv("SECRET_KEY")
 
 router = APIRouter(prefix="/login", tags=["login"])
@@ -46,3 +47,13 @@ async def login_user(login: Login, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="password not correct")
 
     return generate_token(db_user.id, db_user.email, db_user.tenant_id)
+
+
+async def get_current_user(
+    token: HTTPAuthorizationCredentials = Depends(oauth2_bearer),
+):
+    try:
+        payload = jwt.decode(token.credentials, KEY, algorithms=["HS256"])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="jwt decode failed")

@@ -6,6 +6,8 @@ from models.tenant import Tenant
 import logging
 from sqlalchemy.exc import IntegrityError
 
+from routes.auth import get_current_user
+
 router = APIRouter(prefix="/tenants", tags=["tenants"])
 
 
@@ -14,7 +16,7 @@ class TenantCreate(BaseModel):
     api_key: str
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, dependencies=[Depends(get_current_user)])
 async def tenant_create(tenant: TenantCreate, db: AsyncSession = Depends(get_db)):
 
     new_tenant = Tenant(name=tenant.name, api_key=tenant.api_key)
