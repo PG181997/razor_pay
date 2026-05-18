@@ -3,20 +3,34 @@ from sqlalchemy import select
 from pydantic import BaseModel
 from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, Request
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import redis
 
 load_dotenv()
 oauth2_bearer = HTTPBearer()
 KEY = os.getenv("SECRET_KEY")
 
+
 router = APIRouter(prefix="/login", tags=["login"])
 bcrypt_context = CryptContext(schemes=["bcrypt"])
+pool = redis.ConnectionPool(host="localhost", port=6379)
+
+
+async def rate_limit(request:Request):
+    r = redis.Redis(connection_pool = pool)
+    ip = request.client.host
+    rate_limit_ip = f"rate_limit:{ip}"
+    count = r.incr(rate_limit_ip)
+    if count == 1:
+        r.expire(rate_limit_ip, 60)
+    if count > 5:
+        raise HTTPException(status_code=429, detail="To many request")
 
 
 class Login(BaseModel):
@@ -32,7 +46,7 @@ def generate_token(user_id: int, user_email: str, tenant_id: int):
     return token
 
 
-@router.post("/", status_code=200)
+@router.post("/", status_code=200, dependencies = [Depends(rate_limit)])
 async def login_user(login: Login, db: AsyncSession = Depends(get_db)):
 
     response = await db.execute(select(User).where(User.email == login.email))
