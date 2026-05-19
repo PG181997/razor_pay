@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Depends, APIRouter, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from routes.auth import get_current_user
@@ -22,6 +22,7 @@ class Payments(BaseModel):
 @router.post("/", status_code=201)
 async def create_payment(
     payment: Payments,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -79,6 +80,12 @@ async def create_payment(
         db.add(from_wallet_ledger_entery)
         db.add(to_wallet_ledger_entery)
         await db.commit()
+        await request.app.state.redis.enqueue_job(
+            "web_hook",
+            webhook_url="https://httpbin.org/post",
+            amount=payment.amount,
+            transaction_id=transaction.id,
+        )
         await db.refresh(to_wallet_ledger_entery)
         await db.refresh(from_wallet_ledger_entery)
 
