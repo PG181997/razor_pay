@@ -2,7 +2,7 @@ from logging.config import fileConfig
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from database import Base
-from models import User, Tenant, Wallet, transaction, ledger_entry
+from models import User, Tenant, Wallet, transaction, ledger_entry, topup
 from alembic import context
 import os
 
