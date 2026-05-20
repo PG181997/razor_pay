@@ -16,7 +16,7 @@ class TenantCreate(BaseModel):
     api_key: str
 
 
-@router.post("/", status_code=201, dependencies=[Depends(get_current_user)])
+@router.post("/", status_code=201)
 async def tenant_create(tenant: TenantCreate, db: AsyncSession = Depends(get_db)):
 
     new_tenant = Tenant(name=tenant.name, api_key=tenant.api_key)
