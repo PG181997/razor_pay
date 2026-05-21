@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: Command@1997
+      POSTGRES_DB: razor_pay
+
+  redis:
+    image: redis:7
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:Command%401997@postgres:5432/razor_pay
+      SECRET_KEY: RAZORPAY
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    command: arq worker.WorkerSettings
+    build: .
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:Command%401997@postgres:5432/razor_pay
+      SECRET_KEY: RAZORPAY
+      REDIS_URL: redis://redis:6379
+
+    depends_on:
+      - postgres
+      - redis

@@ -1,6 +1,7 @@
 import httpx
 from arq.connections import RedisSettings
 from arq import Retry
+import os
 
 
 async def web_hook(ctx, webhook_url, amount: int, transaction_id: str):
@@ -18,5 +19,7 @@ web_hook.max_tries = 3
 
 
 class WorkerSettings:
-    redis_settings = RedisSettings(host="localhost", port=6379)
+    redis_settings = RedisSettings.from_dsn(
+        os.getenv("REDIS_URL", "redis://localhost:6379")
+    )
     functions = [web_hook]

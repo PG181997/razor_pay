@@ -2,11 +2,14 @@ from fastapi import FastAPI
 from routes import auth, tenants, users, wallets, payments
 from contextlib import asynccontextmanager
 from arq.connections import create_pool, RedisSettings
+import os
+
+hostRes = RedisSettings.from_dsn(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
 
 @asynccontextmanager
 async def lifespane(app):
-    app.state.redis = await create_pool(RedisSettings(host="localhost", port=6379))
+    app.state.redis = await create_pool(hostRes)
     yield
     await app.state.redis.close()
 
